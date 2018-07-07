@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="region">
+
+	<select id="selectRegionListTotalCount" resultType="hashmap">
+		 <![CDATA[
+	         SELECT 
+				COUNT(NO) AS TOTAL_COUNT
+			FROM 
+				ZIPCODE
+	     ]]>
+	</select>
+	
+	<select id="selectRegionByNo" parameterType="hashmap" resultType="ZipcodeDTO">
+		 <![CDATA[
+	        SELECT 
+	        	NO, SIDO, SIGUNGU 
+        	FROM 
+        		ZIPCODE
+        	WHERE
+        		NO = #{ZIPCODE_NO}
+	     ]]>
+	</select>
+
+	<select id="selectRegionList" resultType="ZipcodeDTO">
+		 <![CDATA[
+	        SELECT 
+	        	NO, SIDO, SIGUNGU 
+        	FROM 
+        		ZIPCODE
+	     ]]>
+	</select>
+	
+	<insert id="insertBoard" parameterType="hashmap">
+		<![CDATA[
+			INSERT INTO TRAINEE
+			(
+				NAME,
+				SEX,
+				PHONE,
+				ADDRESS,
+				DEL_GB
+			)
+			VALUES
+			(
+				#{NAME},
+				#{SEX},
+				#{PHONE},
+				#{ADDRESS},
+				'N'
+			)
+		]]>
+	</insert>
+	
+	<update id="updateHitCnt" parameterType="hashmap">
+	    <![CDATA[
+	        UPDATE TB_BOARD
+	        SET
+	            HIT_CNT = NVL(HIT_CNT, 0) + 1
+	        WHERE
+	            IDX = #{IDX}   
+	    ]]>
+	</update>
+	 
+	<select id="selectInformDetail" parameterType="hashmap" resultType="hashmap">
+	    <![CDATA[
+	        SELECT
+	            NAME,
+	            SEX,
+	            PHONE,
+	            ADDRESS,
+	            DEL_GB
+	        FROM
+	            TRAINEE
+	        WHERE
+	            NAME = #{NAME}       
+	    ]]>
+	</select>
+	
+	<select id="selectSidoList" resultType="hashmap">
+	    <![CDATA[
+	        SELECT
+	            DISTINCT(SIDO)
+	        FROM
+	            ZIPCODE
+	    ]]>
+	</select>
+	
+	<select id="selectSigunguListBySido" parameterType="hashmap" resultType="hashmap">
+	    <![CDATA[
+	        SELECT
+	            NO,
+	            SIGUNGU
+	        FROM
+	            ZIPCODE
+	        WHERE
+	        	SIDO = #{region}
+	    ]]>
+	</select>
+	
+	
+	<select id="selectRegionBySigungu" parameterType="hashmap" resultType="ZipcodeDTO">
+	    <![CDATA[
+	        SELECT
+	            NO,
+	            SIDO,
+	            SIGUNGU
+	        FROM
+	            ZIPCODE
+	        WHERE
+	        	SIGUNGU = #{sigungu}
+	    ]]>
+	</select>
+</mapper>

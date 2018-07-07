@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="survey">
+	
+	<update id="updateSurveyDate"  parameterType="hashmap">
+		 <![CDATA[
+	        UPDATE 
+				SURVEY 
+            SET 
+				START_DATE = #{fromDate},
+                END_DATE = #{toDate},
+                SECRET_CODE = #{secretCode},
+                SECRET_CODE_USE = #{secretCodeUse}
+			where 
+				NO = #{survey_no};
+	     ]]>
+     </update>
+     
+	<select id="selectQuestionBySurveyNo" resultType="QuestionDTO" parameterType="Integer">
+		 <![CDATA[
+	        SELECT
+				NO,
+				CONTENT,
+				SHOW_YN,
+				DATE_FORMAT(REGISTER_DATE, "%Y-%m-%d") REGISTER_DATE,
+				DEL_GB,
+				SURVEY_NO
+			FROM 
+				QUESTION
+			WHERE
+				SURVEY_NO = #{survey_no}
+			AND
+				DEL_GB = 'N'
+	     ]]>
+     </select>
+     
+	<select id="selectQuestion" resultType="QuestionDTO" parameterType="Integer">
+		 <![CDATA[
+	        SELECT
+				NO,
+			    CONTENT,
+			    SURVEY_NO,
+			    SHOW_YN,
+			    REGISTER_DATE
+			FROM 
+				QUESTION
+			WHERE 
+				SURVEY_NO = #{value}
+			AND
+				SHOW_YN = 'Y'
+			AND 
+				DEL_GB = 'N'
+	     ]]>
+	</select>
+	
+	<update id="updateQuestionShowYnBy"  parameterType="hashmap">
+		 <![CDATA[
+	        UPDATE 
+				QUESTION 
+			SET 
+				SHOW_YN = #{updateShowYN}
+			WHERE 
+				NO = #{questionNo}
+	     ]]>
+     </update>
+	
+	<select id="selectSurveyByZipcode" resultType="SurveyDTO" parameterType="hashmap">
+		 <![CDATA[
+	        SELECT
+				NO,
+			    DATE_FORMAT(START_DATE, "%Y-%m-%d") START_DATE,
+                DATE_FORMAT(END_DATE, "%Y-%m-%d") END_DATE,
+			    ZIPCODE_NO,
+			    SECRET_CODE,
+			    SECRET_CODE_USE
+			FROM 
+				SURVEY
+			WHERE 
+				ZIPCODE_NO = #{zipcode}
+		 ]]>
+	</select>
+	
+	<insert id="insertSurvey" parameterType="SurveyDTO" useGeneratedKeys="true" keyProperty="no">
+		<![CDATA[
+			INSERT INTO SURVEY
+			(
+				ZIPCODE_NO
+			)
+			VALUES
+			(
+				#{zipcode_no}
+			)
+		]]>
+	</insert>
+	
+	<insert id="insertSurveyResponse" parameterType="hashmap">
+		<if test="list.size != 0">
+		<![CDATA[
+			INSERT INTO SURVEY_RESPONSE
+			(
+				REGISTER_DATE,
+				QUESTION_NO,
+				ANSWER,
+				TRAINEE_NO
+			)
+			VALUES
+		]]>
+			<foreach collection="list" item="item" separator=",">
+			(
+				NOW(),
+				#{item.question_no},
+				#{item.answer_no},
+				#{item.trainee_no}
+			)
+			</foreach>
+		</if>
+	</insert>
+	
+	<insert id="insertQuestion" parameterType="hashmap">
+		<![CDATA[
+			INSERT INTO QUESTION
+			(
+				CONTENT,
+				SHOW_YN,
+				REGISTER_DATE,
+				SURVEY_NO
+			)
+			VALUES
+			(
+				#{content},
+				#{show_yn},
+				curdate(),
+				#{survey_no}
+			)
+		]]>
+	</insert>
+	
+	<select id="selectAnswerCount" resultType="AnswerCountDTO" parameterType="hashmap">
+		<![CDATA[
+			SELECT 
+				C.*
+				, ROUND(C.ANSWER_1/(C.ANSWER_1 + C.ANSWER_2 + C.ANSWER_3 + C.ANSWER_4 + C.ANSWER_5)*100, 2) ANSWER_1_PERCENT
+				
+				, ROUND(C.ANSWER_2/(C.ANSWER_1 + C.ANSWER_2 + C.ANSWER_3 + C.ANSWER_4 + C.ANSWER_5)*100, 2) ANSWER_2_PERCENT
+				
+				, ROUND(C.ANSWER_3/(C.ANSWER_1 + C.ANSWER_2 + C.ANSWER_3 + C.ANSWER_4 + C.ANSWER_5)*100, 2) ANSWER_3_PERCENT
+				
+				, ROUND(C.ANSWER_4/(C.ANSWER_1 + C.ANSWER_2 + C.ANSWER_3 + C.ANSWER_4 + C.ANSWER_5)*100, 2) ANSWER_4_PERCENT
+				
+				, ROUND(C.ANSWER_5/(C.ANSWER_1 + C.ANSWER_2 + C.ANSWER_3 + C.ANSWER_4 + C.ANSWER_5)*100, 2) ANSWER_5_PERCENT
+				
+				, ROUND((C.ANSWER_1+C.ANSWER_2)/(C.ANSWER_1 + C.ANSWER_2 + C.ANSWER_3 + C.ANSWER_4 + C.ANSWER_5)*100, 2) ANSWER_1_2_PERCENT
+				
+				, ROUND(C.ANSWER_3/(C.ANSWER_1 + C.ANSWER_2 + C.ANSWER_3 + C.ANSWER_4 + C.ANSWER_5)*100, 2) ANSWER_3_3_PERCENT
+				
+				, ROUND((C.ANSWER_4+C.ANSWER_5)/(C.ANSWER_1 + C.ANSWER_2 + C.ANSWER_3 + C.ANSWER_4 + C.ANSWER_5)*100, 2) ANSWER_4_5_PERCENT
+			FROM
+			(
+				SELECT
+					COUNT(A.NO) TOTAL,
+					B.CONTENT CONTENT,
+					QUESTION_NO,
+					COUNT(CASE WHEN ANSWER = '1' THEN 1 END) 'ANSWER_1',
+					COUNT(CASE WHEN ANSWER = '2' THEN 1 END) 'ANSWER_2',
+					COUNT(CASE WHEN ANSWER = '3' THEN 1 END) 'ANSWER_3',
+					COUNT(CASE WHEN ANSWER = '4' THEN 1 END) 'ANSWER_4',
+					COUNT(CASE WHEN ANSWER = '5' THEN 1 END) 'ANSWER_5'
+				FROM
+					SURVEY_RESPONSE A LEFT JOIN QUESTION B
+					ON 
+					A.QUESTION_NO = B.NO
+				WHERE 
+					B.SURVEY_NO = #{survey_no}
+				AND
+					B.DEL_GB = 'N'
+				GROUP BY
+					QUESTION_NO
+				ORDER BY
+					QUESTION_NO
+			) C
+		]]>
+	</select>
+	
+</mapper>
